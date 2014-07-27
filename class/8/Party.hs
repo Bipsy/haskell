@@ -3,10 +3,25 @@ module Party where
 import Employee
 import Data.Monoid
 import Data.Tree
+import System.IO
+
+main :: IO ()
+main = do
+    withFile "company.txt" ReadMode (\handle -> do
+        contents <- hGetContents handle
+        let tree = read contents
+        let results = maxFun tree
+        putStrLn $ printGuestList results)
 
 instance Monoid GuestList where
     mempty = (GL [] 0)
     mappend (GL list fun) (GL list' fun') = (GL (list <> list') (fun+fun'))
+
+printGuestList :: GuestList -> String
+printGuestList (GL list fun) = foldl 
+    (\ acc ele -> acc ++ (empName ele) ++ "\n")
+    ("Total Fun: " ++ show fun ++ "\n")
+    list
 
 glCons :: Employee -> GuestList -> GuestList
 glCons emp (GL list score) = (GL (emp:list) (score+(empFun emp)))
