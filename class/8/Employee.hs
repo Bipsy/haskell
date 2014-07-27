@@ -44,6 +44,10 @@ testCompany2
       ]
     ]
 
+testCompany3 :: Tree Employee
+testCompany3 = Node (Emp "A" 1) 
+    [ Node (Emp "B" 2) [], Node (Emp "C" 3) []]
+
 -- A type to store a list of guests and their total fun score.
 data GuestList = GL [Employee] Fun
   deriving (Show, Eq)
