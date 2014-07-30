@@ -60,3 +60,6 @@ posInt = Parser f
 
 first :: (a -> b) -> (a,c) -> (b,c)
 first f (a,c) = (f a,c)
+
+instance Applicative Parser where
+    pure x = Parser (\ _ -> Just (x, ""))
