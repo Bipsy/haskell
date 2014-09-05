@@ -2,39 +2,34 @@ module Main where
 
 import qualified Data.Map as Map
 import System.IO
+import Data.List
 
-addEmUp :: String -> Map.Map String Int -> Map.Map String Int
-addEmUp string map' = addEmUp' (Map.lookup string map') string map'
-    where
-        addEmUp' (Just val) string map' = Map.insert string (val+1) map'
-        addEmUp' Nothing string map' = Map.insert string 1 map'
-
-findKMER :: [String] -> Map.Map String Int
-findKMER strings = foldr addEmUp Map.empty strings
-
-scanString :: String -> Int -> Map.Map String Int
-scanString [] _ = Map.empty
-scanString string len = scanString' string len Map.empty
-    where
-        scanString' string@(x:xs) len map' =
-            if (length string < len)
-                then map'
-                else scanString' xs len $ addEmUp (take len string) map'
+scanString :: (Ord a) => [a] -> Int -> Map.Map [a] Int
+scanString xs k = res
+    where res = foldr (\ele acc -> Map.insertWith' (+) (take k ele) 1 acc) 
+                      Map.empty 
+                      sublists
+          sublists = filter (\x -> length x >= k) (tails xs)
                  
-maxVal :: Map.Map String Int -> Int
-maxVal map' = Map.fold (\ ele acc -> 
-                if ele > acc 
-                    then ele
-                    else acc) 0 map'
+maxVal :: Map.Map [a] Int -> Int
+maxVal = Map.fold (\ ele acc -> if ele > acc then ele else acc) 0 
 
-reportResults :: Int -> Map.Map String Int -> (Int, [String])
+findKMER :: (Ord a) => [a] -> Int -> (Int, [[a]])
+findKMER xs k = reportResults val kmers
+    where kmers = scanString xs k
+          val = maxVal kmers
+
+reportResults :: Int -> Map.Map [a] Int -> (Int, [[a]])
 reportResults val map' = (val, Map.keys $ Map.filter (== val) map')
 
+parseContents :: String -> (String, Int)
+parseContents string = 
+    let (first:second:xs) = lines string
+        in (first, read second)
 
 main :: IO ()
 main = do
-    withFile "text.txt" ReadMode (\ handle -> do
-        contents <- hGetContents handle
-        let res = scanString contents 11
-            val = maxVal res
-        putStr $ show $ reportResults val res)
+    contents <- getContents
+    let (xs, k) = parseContents contents
+        res = findKMER xs k
+    putStrLn $ show res
