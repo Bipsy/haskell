@@ -9,7 +9,7 @@ main :: IO ()
 main = do
     contents <- getContents
     let (genome, (k, l, t)) = parseContents contents
-        res = intercalate " " $ clumpFinding genome k l t
+        res = intercalate " " . removeDuplicates $ clumpFinding genome k l t
     putStrLn res
 
 scanString :: (Ord a) => [a] -> Int -> Map.Map [a] Int
