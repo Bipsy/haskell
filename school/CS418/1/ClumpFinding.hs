@@ -1,51 +1,36 @@
 module Main where
 
-import Data.List
-import Data.Function
-import Control.Arrow
 import qualified Data.Map as Map
+import Data.List
+
+scanString :: (Ord a) => [a] -> Int -> Map.Map [a] [Int]
+scanString xs k = res
+    where res = foldr (\(xs,i) acc -> Map.insertWith' (++) (take k xs) [i] acc)
+                      Map.empty 
+                      withIndeces
+          withIndeces = zip sublists [0..]
+          sublists = filter (\x -> length x >= k) (tails xs)
+
+closeEnough :: Map.Map [a] [Int] -> Int -> Int -> Map.Map [a] [Int]
+closeEnough map' l t = Map.filter (closeEnough' l t) map'
+    where closeEnough' l t val = foldr (||) False (answers val)
+          answers xs = map (\xs -> if (last xs - head xs <= l) then True else False) (chunks xs)
+          chunks xs = map (take t) (sublists xs)
+          sublists xs = filter (\x -> length x >= t) (tails xs)
+
+parseContents :: String -> (String, (Int, Int, Int))
+parseContents string =
+    let (firstline:secondline:rest) = lines string
+        genome = firstline
+        (k:l:t:xs) = map read $ words secondline
+        in (genome, (k,l,t))
+
+clumpFinder :: (Ord a) => [a] -> Int -> Int -> Int -> [[a]]
+clumpFinder xs k l t = Map.keys $ closeEnough (scanString xs k) l t
 
 main :: IO ()
 main = do
     contents <- getContents
     let (genome, (k, l, t)) = parseContents contents
-        res = intercalate " " . removeDuplicates $ clumpFinding genome k l t
+        res = show $ clumpFinder genome k l t
     putStrLn res
-
-scanString :: (Ord a) => [a] -> Int -> Map.Map [a] Int
-scanString xs k = res
-    where res = foldr (\ele acc -> Map.insertWith' (+) (take k ele) 1 acc)
-                      Map.empty
-                      sublists
-          sublists = filter (\x -> length x >= k) (tails xs)
-
-maxVal :: Map.Map [a] Int -> Int
-maxVal = Map.fold (\ ele acc -> if ele > acc then ele else acc) 0
-
-findKMER :: (Ord a) => [a] -> Int -> (Int, [[a]])
-findKMER xs k = reportResults val kmers
-    where kmers = scanString xs k
-          val = maxVal kmers
-
-reportResults :: Int -> Map.Map [a] Int -> (Int, [[a]])
-reportResults val map' = (val, Map.keys $ Map.filter (== val) map')
-
-clumpFinding :: (Ord a) => [a] -> Int -> Int -> Int -> [[a]]
-clumpFinding xs k l t = foldr (++) [] clumps
-    where clumps = map (\x -> snd x) matches
-          matches = filter (\ x -> fst x == t) kmers
-          kmers = map (`findKMER` k) sublists
-          sublists = filter (\x -> length x >= l) (tails xs)
-
-removeDuplicates :: (Eq a) => [a] -> [a]
-removeDuplicates = foldr (\ ele seen -> if (ele `elem` seen)
-                                            then seen
-                                            else ele : seen)
-                         []
-
-parseContents :: String -> (String, (Int, Int, Int))
-parseContents string = 
-    let (firstline:secondline:rest) = lines string
-        genome = firstline
-        (k:l:t:xs) = map read $ words secondline
-        in (genome, (k,l,t))
