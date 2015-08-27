@@ -19,4 +19,5 @@ executable io
   build-depends:       base >= 4.7 && < 5,
                         aeson,
                         text,
-                        bytestring
+                        bytestring,
+                        containers
